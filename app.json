@@ -3,28 +3,53 @@
     "name": "EasyWord",
     "slug": "EasyWord",
     "version": "1.0.0",
+    "scheme": "easyword",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/icon.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#FFBB00"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.org.easyword",
+      "buildNumber": "1",
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "EasyWord uses the microphone to record your word pronunciations so you can play them back during vocabulary review."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFBB00"
       },
+      "package": "com.easyword.app",
+      "versionCode": 1,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "./plugins/withCxxFlags",
+      "expo-apple-authentication",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "EasyWord uses the microphone to record your word pronunciations so you can play them back during vocabulary review."
+        }
+      ],
+      "expo-document-picker",
+      "expo-web-browser",
+      "expo-secure-store"
+    ]
   }
 }

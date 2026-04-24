@@ -1,0 +1,22 @@
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "production": {
+      "distribution": "store",
+      "ios": {
+        "image": "macos-ventura-13.6-xcode-15.2"
+      }
+    }
+  },
+  "update": {
+    "production": {
+      "channel": "production"
+    }
+  }
+}
