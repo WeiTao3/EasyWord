@@ -67,9 +67,8 @@ const ListDetailScreen: React.FC = () => {
     const dates: string[] = [];
     const offsets: string[] = [];
     for (const day of intervals) {
-      const offset = day - 1;
-      dates.push(addDays(today, offset));
-      offsets.push(offset === 0 ? 'today' : `+${offset}`);
+      dates.push(addDays(today, day));
+      offsets.push(`+${day}`);
     }
     addCalendarEntries(currentList.listNo, dates);
     setCalendarSnackbar(t.listDetail.addedToCalendar(currentList.listNo, offsets.join(', ')));

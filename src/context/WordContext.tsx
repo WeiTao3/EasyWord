@@ -258,7 +258,7 @@ export const WordProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const removeCalendarBatch = async (listNo: string, viewDate: string) => {
     if (!user) return;
-    const offsets = state.settings.reviewIntervals.map((i) => i - 1);
+    const offsets = state.settings.reviewIntervals;
 
     // Get all dates where this listNo is scheduled
     const allListDates = Object.entries(state.calendarEntries)
