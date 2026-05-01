@@ -13,8 +13,7 @@ interface Props {
 const FEATURES = [
   { icon: 'folder-multiple', free: `Up to ${FREE_LIST_LIMIT} word lists`, premium: 'Unlimited word lists' },
   { icon: 'format-list-bulleted', free: `Up to ${FREE_WORDS_PER_LIST_LIMIT} words per list`, premium: 'Unlimited words per list' },
-  { icon: 'calendar-check', free: 'Calendar scheduling', premium: 'Calendar scheduling' },
-  { icon: 'microphone', free: 'Audio recordings', premium: 'Audio recordings' },
+  { icon: 'microphone', free: '—', premium: 'Audio recordings' },
   { icon: 'sync', free: 'Cloud sync', premium: 'Cloud sync across devices' },
 ];
 
