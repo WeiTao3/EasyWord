@@ -16,7 +16,11 @@ export const formatDateShort = (dateString: string): string => {
 };
 
 export const getToday = (): string => {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 export const getNow = (): string => {
@@ -24,9 +28,13 @@ export const getNow = (): string => {
 };
 
 export const addDays = (dateString: string, days: number): string => {
-  const date = new Date(dateString);
+  const [yyyy, mm, dd] = dateString.split('-').map(Number);
+  const date = new Date(yyyy, mm - 1, dd);
   date.setDate(date.getDate() + days);
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 };
 
 export const isToday = (dateString: string): boolean => {

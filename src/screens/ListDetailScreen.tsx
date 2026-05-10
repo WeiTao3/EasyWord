@@ -85,6 +85,14 @@ const ListDetailScreen: React.FC = () => {
   const listWords = state.words.filter((w) => w.listId === listId);
   const wordsWithAudio = listWords.filter((w) => w.audioUri);
 
+  const isListInCalendar =
+    !!currentList?.listNo &&
+    Object.values(state.calendarEntries).some((nos) => nos.includes(currentList.listNo!));
+  const showCalendarHint =
+    listWords.length > 0 &&
+    wordsWithAudio.length === listWords.length &&
+    !isListInCalendar;
+
   // Clean up sound on unmount
   useEffect(() => {
     return () => {
@@ -351,7 +359,7 @@ const ListDetailScreen: React.FC = () => {
             <IconButton
               icon="calendar-plus"
               size={28}
-              iconColor={theme.colors.onSurfaceVariant}
+              iconColor={showCalendarHint ? theme.colors.primary : theme.colors.onSurfaceVariant}
               onPress={handleAddToCalendar}
             />
             <IconButton
@@ -381,6 +389,22 @@ const ListDetailScreen: React.FC = () => {
               />
             )}
           </View>
+
+          {showCalendarHint && (
+            <View style={styles.calendarHint}>
+              {/* flex:1 mirrors the icon + title area so arrow aligns under calendar-plus */}
+              <Text variant="labelSmall" style={{ color: theme.colors.primary, flex: 1, textAlign: 'right', paddingRight: 4 }}>
+                {t.listDetail.calendarHint}
+              </Text>
+              {/* arrow — same container width as the calendar-plus IconButton (size 28 → ~44px) */}
+              <View style={{ width: 44, alignItems: 'center' }}>
+                <Icon name="arrow-up" size={16} color={theme.colors.primary} />
+              </View>
+              {/* spacers matching eye (size 28 → ~44px) and play-circle (size 36 → ~52px) */}
+              <View style={{ width: 58 }} />
+              <View style={{ width: 66 }} />
+            </View>
+          )}
 
           {isPlayingAll && (
             <View style={styles.playerProgress}>
@@ -594,6 +618,11 @@ const styles = StyleSheet.create({
   list: { padding: 16, paddingBottom: 100 },
   emptyList: { flex: 1, padding: 16 },
   playerCard: { marginBottom: 16 },
+  calendarHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
   playerTop: { flexDirection: 'row', alignItems: 'center' },
   playerProgress: { marginTop: 12 },
   progressBar: { height: 6, borderRadius: 3 },

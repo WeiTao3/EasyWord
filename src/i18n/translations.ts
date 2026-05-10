@@ -91,6 +91,7 @@ export interface Translations {
     removeFromCalendar: string;
     removeConfirm: (name: string) => string;
     removed: (name: string) => string;
+    checkHint: string;
   };
 
   // Record Screen
@@ -128,6 +129,7 @@ export interface Translations {
     source: string;
     deleteWordTitle: string;
     deleteWordConfirm: (word: string) => string;
+    calendarHint: string;
   };
 
   // Onboarding Carousel
@@ -326,6 +328,7 @@ export const translations: Record<Language, Translations> = {
       removeFromCalendar: 'Remove from Calendar',
       removeConfirm: (name) => `Remove "${name}" from all its scheduled review dates?`,
       removed: (name) => `"${name}" removed from calendar`,
+      checkHint: 'Check after\nreviewing',
     },
 
     record: {
@@ -361,6 +364,7 @@ export const translations: Record<Language, Translations> = {
       source: 'Source (optional)',
       deleteWordTitle: 'Delete Word',
       deleteWordConfirm: (word) => `Are you sure you want to delete "${word}"?`,
+      calendarHint: 'All recordings ready — tap to schedule reviews',
     },
 
     onboarding: {
@@ -369,34 +373,22 @@ export const translations: Record<Language, Translations> = {
       getStarted: 'Get Started',
       slides: [
         {
-          title: 'Welcome to EasyWord',
-          description:
-            'Build your vocabulary with spaced repetition — a proven technique to help you remember words long-term.',
+          title: 'Step 1 — Extract Word',
+          description: 'Pick new words from resources.',
         },
         {
-          title: 'Create Word Lists',
+          title: 'Step 2 — Add Word',
           description:
-            'Go to the Lists tab and tap +. Give each list a unique List No (e.g. "1" or "IELTS") — the calendar uses it to schedule your reviews.',
+            'Add new words to an organized list with its meaning on the day you encounter it.',
         },
         {
-          title: 'Add Words',
-          description:
-            'On the Add tab, type a word and tap Look Up. Review the definition, then save it to a list. Switch between language dictionaries with the flag button.',
+          title: 'Step 3 — Record Word',
+          description: 'Practice speaking the word and record it in your own voice.',
         },
         {
-          title: 'Schedule Reviews',
+          title: 'Step 4 — Review Word',
           description:
-            'Open any list and tap the calendar + icon. The list is added to your review calendar on the dates set by your spaced repetition schedule.',
-        },
-        {
-          title: 'Review on the Calendar',
-          description:
-            'On the Review tab, tap a date with badges to see your scheduled lists. Tap a list to study its words, then check it off when done.',
-        },
-        {
-          title: 'Customize Settings',
-          description:
-            'In Settings, adjust your review interval days, install dictionaries for any language pair, and export your full vocabulary as a text file.',
+            'Review the recording of the words after 1 day, 2 days, 4 days and 7 days.',
         },
       ],
     },
@@ -587,6 +579,7 @@ export const translations: Record<Language, Translations> = {
       removeFromCalendar: '从日历中移除',
       removeConfirm: (name) => `将"${name}"从所有已安排的复习日期中移除？`,
       removed: (name) => `"${name}"已从日历中移除`,
+      checkHint: '复习后\n打勾',
     },
 
     record: {
@@ -622,6 +615,7 @@ export const translations: Record<Language, Translations> = {
       source: '来源（可选）',
       deleteWordTitle: '删除单词',
       deleteWordConfirm: (word) => `您确定要删除"${word}"吗？`,
+      calendarHint: '录音已全部完成 — 点击安排复习计划',
     },
 
     onboarding: {
@@ -630,34 +624,20 @@ export const translations: Record<Language, Translations> = {
       getStarted: '开始使用',
       slides: [
         {
-          title: '欢迎使用 EasyWord',
-          description:
-            '通过间隔重复构建您的词汇量——这是一种经过验证的长期记忆单词的方法。',
+          title: '第一步 — 提取生词',
+          description: '从资源材料中挑选新单词。',
         },
         {
-          title: '创建单词列表',
-          description:
-            '前往"列表"标签页并点击 +。为每个列表设置唯一的列表编号（如"1"或"IELTS"）——日历会用它来安排您的复习计划。',
+          title: '第二步 — 添加单词',
+          description: '在遇到生词的当天，将新单词连同释义整理到有序的词汇表中。',
         },
         {
-          title: '添加单词',
-          description:
-            '在"添加"标签页输入单词并点击"查词"。查看释义后保存到列表。点击旗帜按钮可切换语言词典。',
+          title: '第三步 — 录制单词',
+          description: '练习朗读单词，并用自己的声音录制下来。',
         },
         {
-          title: '安排复习',
-          description:
-            '打开任意列表，点击日历 + 图标。该列表将根据您的间隔重复计划添加到相应日期的复习日历中。',
-        },
-        {
-          title: '在日历上复习',
-          description:
-            '在"复习"标签页，点击带有标记的日期查看已安排的列表。点击列表学习其中的单词，完成后打勾确认。',
-        },
-        {
-          title: '自定义设置',
-          description:
-            '在设置中调整复习间隔天数、安装任意语言对的词典，并将完整词汇导出为文本文件。',
+          title: '第四步 — 复习单词',
+          description: '在第 1、2、4、7 天分别回听单词的录音进行复习。',
         },
       ],
     },

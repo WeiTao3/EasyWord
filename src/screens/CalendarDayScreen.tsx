@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { Surface, Text, Card, useTheme, IconButton, Portal, Dialog, Button, TextInput, Snackbar } from 'react-native-paper';
+import { Surface, Text, Card, useTheme, IconButton, Portal, Dialog, Button, TextInput, Snackbar, Menu, Divider } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -39,6 +39,9 @@ const CalendarDayScreen: React.FC = () => {
 
   // Delete dialog state
   const [deleteDialogList, setDeleteDialogList] = useState<WordList | null>(null);
+
+  // Three-dot menu state
+  const [menuVisible, setMenuVisible] = useState<string | null>(null);
 
   const isToday = date === getToday();
 
@@ -113,39 +116,57 @@ const CalendarDayScreen: React.FC = () => {
             </Text>
           </View>
 
-          {/* Delete from calendar button */}
-          <IconButton
-            icon="calendar-remove"
-            size={20}
-            iconColor={theme.colors.error}
-            onPress={() => setDeleteDialogList(item)}
-          />
-
-          {/* Move button */}
-          <IconButton
-            icon="calendar-arrow-right"
-            size={20}
-            iconColor={theme.colors.onSurfaceVariant}
-            onPress={() => handleMoveOpen(item)}
-          />
-
-          {/* Checkbox — only tappable on today */}
-          <TouchableOpacity
-            onPress={() => isToday && toggleListDateCheck(item.id, date)}
-            disabled={!isToday}
-            style={[
-              styles.checkbox,
-              {
-                borderColor: isToday ? theme.colors.primary : theme.colors.outlineVariant,
-                backgroundColor: isChecked(item.id) ? theme.colors.primary : 'transparent',
-                opacity: isToday ? 1 : 0.4,
-              },
-            ]}
+          {/* Three-dot menu */}
+          <Menu
+            visible={menuVisible === item.id}
+            onDismiss={() => setMenuVisible(null)}
+            anchor={
+              <IconButton
+                icon="dots-vertical"
+                size={20}
+                iconColor={theme.colors.onSurfaceVariant}
+                onPress={() => setMenuVisible(item.id)}
+              />
+            }
           >
-            {isChecked(item.id) && (
-              <Icon name="check" size={14} color={theme.colors.onPrimary} />
+            <Menu.Item
+              leadingIcon="calendar-arrow-right"
+              title={t.calendarDay.moveToDate}
+              onPress={() => { setMenuVisible(null); handleMoveOpen(item); }}
+            />
+            <Divider />
+            <Menu.Item
+              leadingIcon="calendar-remove"
+              title={t.calendarDay.removeFromCalendar}
+              titleStyle={{ color: theme.colors.error }}
+              onPress={() => { setMenuVisible(null); setDeleteDialogList(item); }}
+            />
+          </Menu>
+
+          {/* Checkbox with hint — only tappable on today */}
+          <View style={styles.checkboxWrapper}>
+            {!isChecked(item.id) && isToday && (
+              <Text variant="labelSmall" style={[styles.checkHint, { color: theme.colors.primary }]}>
+                {t.calendarDay.checkHint}
+              </Text>
             )}
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => isToday && toggleListDateCheck(item.id, date)}
+              disabled={!isToday}
+              style={[
+                styles.checkbox,
+                {
+                  borderColor: isToday ? theme.colors.primary : theme.colors.outlineVariant,
+                  backgroundColor: isChecked(item.id) ? theme.colors.primary : 'transparent',
+                  opacity: isToday ? 1 : 0.4,
+                },
+              ]}
+            >
+              {isChecked(item.id) && (
+                <Icon name="check" size={14} color={theme.colors.onPrimary} />
+              )}
+            </TouchableOpacity>
+          </View>
         </Card.Content>
       </Card>
     );
@@ -259,6 +280,15 @@ const styles = StyleSheet.create({
   iconWrapper: { marginRight: 12 },
   cardText: { flex: 1 },
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  checkboxWrapper: {
+    alignItems: 'center',
+    marginLeft: 4,
+  },
+  checkHint: {
+    textAlign: 'center',
+    marginBottom: 2,
+    lineHeight: 13,
+  },
   checkbox: {
     width: 22,
     height: 22,
@@ -266,7 +296,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
   },
 });
 

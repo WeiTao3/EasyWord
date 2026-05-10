@@ -251,7 +251,9 @@ const AddWordScreen: React.FC = () => {
                     <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
                       {t.add.saveToList}
                     </Text>
-                    <Text variant="bodyMedium" style={{ fontWeight: 'bold' }}>{selectedList?.name ?? t.add.noList}</Text>
+                    <Text variant="bodyMedium" style={{ fontWeight: 'bold' }}>
+                      {selectedList ? `${selectedList.name}${selectedList.listNo ? ` #${selectedList.listNo}` : ''}` : t.add.noList}
+                    </Text>
                   </View>
                   <Icon name="chevron-down" size={20} color={theme.colors.onSurfaceVariant} />
                 </View>
@@ -261,7 +263,7 @@ const AddWordScreen: React.FC = () => {
             {state.lists.map((list) => (
               <Menu.Item
                 key={list.id}
-                title={list.name}
+                title={list.listNo ? `${list.name} #${list.listNo}` : list.name}
                 leadingIcon={list.id === selectedListId ? 'check' : 'folder'}
                 onPress={() => {
                   setSelectedListId(list.id);

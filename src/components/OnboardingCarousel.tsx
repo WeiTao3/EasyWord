@@ -13,7 +13,7 @@ import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../context/LanguageContext';
 
-const SLIDE_ICONS = ['hand-wave', 'folder-plus', 'magnify', 'calendar-plus', 'calendar-check', 'cog'];
+const SLIDE_ICONS = ['book-play', 'format-list-bulleted-type', 'microphone', 'calendar-check'];
 
 interface Props {
   visible: boolean;
