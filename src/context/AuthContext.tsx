@@ -78,8 +78,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       if (result.type === 'success') {
         const url = new URL(result.url);
-        const accessToken = url.searchParams.get('access_token');
-        const refreshToken = url.searchParams.get('refresh_token');
+        // Tokens may be in the fragment (#) or query string (?)
+        const params = new URLSearchParams(url.hash.startsWith('#') ? url.hash.slice(1) : url.search.slice(1));
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
         if (accessToken && refreshToken) {
           await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
         }
