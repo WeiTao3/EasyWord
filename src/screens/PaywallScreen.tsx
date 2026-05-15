@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Linking, TouchableOpacity } from 'react-native';
 import { Text, Button, Card, useTheme, Snackbar, IconButton } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
@@ -111,6 +111,16 @@ const PaywallScreen: React.FC<Props> = ({ onDismiss }) => {
         <Text variant="bodySmall" style={[styles.legal, { color: theme.colors.onSurfaceVariant }]}>
           Payment will be charged to your App Store / Google Play account. Subscription automatically renews unless cancelled at least 24 hours before the end of the current period.
         </Text>
+
+        <View style={styles.legalLinks}>
+          <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+            <Text variant="bodySmall" style={[styles.legalLink, { color: theme.colors.primary }]}>Terms of Use</Text>
+          </TouchableOpacity>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}> · </Text>
+          <TouchableOpacity onPress={() => Linking.openURL('https://weitao3.github.io/easyword-privacy/')}>
+            <Text variant="bodySmall" style={[styles.legalLink, { color: theme.colors.primary }]}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
       <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar('')} duration={3000}>
@@ -140,7 +150,9 @@ const styles = StyleSheet.create({
   purchaseBtn: { marginBottom: 12, borderRadius: 12 },
   purchaseBtnContent: { paddingVertical: 6 },
   purchaseBtnLabel: { fontSize: 16, fontWeight: 'bold' },
-  legal: { textAlign: 'center', fontSize: 11, lineHeight: 16, paddingHorizontal: 8 },
+  legal: { textAlign: 'center', fontSize: 11, lineHeight: 16, paddingHorizontal: 8, marginBottom: 8 },
+  legalLinks: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  legalLink: { fontSize: 11 },
 });
 
 export default PaywallScreen;
