@@ -34,7 +34,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const timeout = setTimeout(() => setIsLoading(false), 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(timeout);
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -45,7 +48,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUpWithEmail = async (email: string, password: string): Promise<string | null> => {
