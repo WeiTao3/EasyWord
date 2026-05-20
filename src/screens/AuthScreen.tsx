@@ -12,13 +12,17 @@ import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-const AuthScreen: React.FC = () => {
+interface AuthScreenProps {
+  initialMode?: 'login' | 'register' | 'verify' | 'forgot' | 'reset-verify' | 'new-password';
+}
+
+const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInWithApple, verifySignUpOtp, sendPasswordReset, verifyResetOtp, updatePassword } = useAuth();
+  const { signInWithEmail, signUpWithEmail, signInWithGoogle, signInWithApple, verifySignUpOtp, sendPasswordReset, verifyResetOtp, updatePassword, clearPasswordReset } = useAuth();
   const { t } = useLanguage();
 
-  const [mode, setMode] = useState<'login' | 'register' | 'verify' | 'forgot' | 'reset-verify' | 'new-password'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'verify' | 'forgot' | 'reset-verify' | 'new-password'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -32,6 +36,8 @@ const AuthScreen: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [secureNew, setSecureNew] = useState(true);
+  const [secureConfirm, setSecureConfirm] = useState(true);
 
   const handleEmailAuth = async () => {
     if (!email.trim() || !password.trim()) {
@@ -86,7 +92,7 @@ const AuthScreen: React.FC = () => {
     const error = await verifyResetOtp(pendingEmail, otp);
     setVerifyLoading(false);
     if (error) setSnackbar(error);
-    else { setNewPassword(''); setConfirmNewPassword(''); setMode('new-password'); }
+    else { Keyboard.dismiss(); setNewPassword(''); setConfirmNewPassword(''); setMode('new-password'); }
   };
 
   const handleUpdatePassword = async () => {
@@ -96,7 +102,7 @@ const AuthScreen: React.FC = () => {
     const error = await updatePassword(newPassword);
     setResetLoading(false);
     if (error) setSnackbar(error);
-    // On success: onAuthStateChange fires → app navigates away automatically
+    else clearPasswordReset();
   };
 
   const handleGoogle = async () => {
@@ -204,19 +210,27 @@ const AuthScreen: React.FC = () => {
                 {t.auth.setNewPasswordSubtitle}
               </Text>
               <TextInput
+                key="new-password-field"
                 label={t.auth.newPassword}
                 value={newPassword}
                 onChangeText={setNewPassword}
                 mode="outlined"
-                secureTextEntry
+                secureTextEntry={secureNew}
+                autoCapitalize="none"
+                textContentType="none"
+                right={<TextInput.Icon icon={secureNew ? 'eye-off' : 'eye'} onPress={() => setSecureNew(v => !v)} />}
                 style={styles.input}
               />
               <TextInput
+                key="confirm-password-field"
                 label={t.auth.confirmNewPassword}
                 value={confirmNewPassword}
                 onChangeText={setConfirmNewPassword}
                 mode="outlined"
-                secureTextEntry
+                secureTextEntry={secureConfirm}
+                autoCapitalize="none"
+                textContentType="none"
+                right={<TextInput.Icon icon={secureConfirm ? 'eye-off' : 'eye'} onPress={() => setSecureConfirm(v => !v)} />}
                 style={styles.input}
               />
               <Button
