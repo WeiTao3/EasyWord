@@ -4,7 +4,7 @@ import {
   TouchableWithoutFeedback, Keyboard, ScrollView,
 } from 'react-native';
 import {
-  Text, TextInput, Button, Snackbar, useTheme, Divider,
+  Text, TextInput, Button, useTheme, Divider,
 } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as AppleAuthentication from 'expo-apple-authentication';
@@ -30,6 +30,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [snackbar, setSnackbar] = useState('');
+  const showError = (msg: string) => {
+    setSnackbar(msg);
+    setTimeout(() => setSnackbar(''), 4000);
+  };
   const [pendingEmail, setPendingEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -41,11 +45,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
 
   const handleEmailAuth = async () => {
     if (!email.trim() || !password.trim()) {
-      setSnackbar(t.auth.emailPasswordRequired);
+      showError(t.auth.emailPasswordRequired);
       return;
     }
     if (mode === 'register' && password !== confirmPassword) {
-      setSnackbar(t.auth.passwordsDoNotMatch);
+      showError(t.auth.passwordsDoNotMatch);
       return;
     }
     setLoading(true);
@@ -67,22 +71,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
     setVerifyLoading(true);
     const error = await verifySignUpOtp(pendingEmail, otp);
     setVerifyLoading(false);
-    if (error) setSnackbar(error);
+    if (error) showError(error);
     // On success: onAuthStateChange fires → app navigates away automatically
   };
 
   const handleResendOtp = async () => {
     const error = await signUpWithEmail(pendingEmail, password);
-    if (!error) setSnackbar(t.auth.codeResentTo(pendingEmail));
-    else setSnackbar(error);
+    if (!error) showError(t.auth.codeResentTo(pendingEmail));
+    else showError(error);
   };
 
   const handleForgotSubmit = async () => {
-    if (!email.trim()) { setSnackbar(t.auth.emailRequired); return; }
+    if (!email.trim()) { showError(t.auth.emailRequired); return; }
     setResetLoading(true);
     const error = await sendPasswordReset(email.trim());
     setResetLoading(false);
-    if (error) setSnackbar(error);
+    if (error) showError(error);
     else { setPendingEmail(email.trim()); setOtp(''); setMode('reset-verify'); }
   };
 
@@ -91,17 +95,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
     setVerifyLoading(true);
     const error = await verifyResetOtp(pendingEmail, otp);
     setVerifyLoading(false);
-    if (error) setSnackbar(error);
+    if (error) showError(error);
     else { Keyboard.dismiss(); setNewPassword(''); setConfirmNewPassword(''); setMode('new-password'); }
   };
 
   const handleUpdatePassword = async () => {
-    if (!newPassword.trim()) { setSnackbar(t.auth.newPasswordRequired); return; }
-    if (newPassword !== confirmNewPassword) { setSnackbar(t.auth.passwordsDoNotMatch); return; }
+    if (!newPassword.trim()) { showError(t.auth.newPasswordRequired); return; }
+    if (newPassword !== confirmNewPassword) { showError(t.auth.passwordsDoNotMatch); return; }
     setResetLoading(true);
     const error = await updatePassword(newPassword);
     setResetLoading(false);
-    if (error) setSnackbar(error);
+    if (error) showError(error);
     else clearPasswordReset();
   };
 
@@ -109,12 +113,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
     setGoogleLoading(true);
     const error = await signInWithGoogle();
     setGoogleLoading(false);
-    if (error) setSnackbar(error);
+    if (error) showError(error);
   };
 
   const handleApple = async () => {
     const error = await signInWithApple();
-    if (error) setSnackbar(error);
+    if (error) showError(error);
   };
 
   return (
@@ -132,6 +136,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
           <Text variant="bodyMedium" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
             {t.auth.tagline}
           </Text>
+
+          {/* Inline error message */}
+          {!!snackbar && (
+            <View style={[styles.errorBanner, { backgroundColor: theme.colors.errorContainer }]}>
+              <Text variant="bodySmall" style={{ color: theme.colors.error }}>{snackbar}</Text>
+            </View>
+          )}
 
           {mode === 'forgot' ? (
             /* ── Forgot password ────────────────────────────────────────── */
@@ -193,7 +204,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
               >
                 {t.auth.verify}
               </Button>
-              <Button mode="text" onPress={() => sendPasswordReset(pendingEmail).then(e => { if (!e) setSnackbar(t.auth.codeResentTo(pendingEmail)); })} style={{ marginBottom: 4 }}>
+              <Button mode="text" onPress={() => sendPasswordReset(pendingEmail).then(e => { if (!e) showError(t.auth.codeResentTo(pendingEmail)); })} style={{ marginBottom: 4 }}>
                 {t.auth.resendCode}
               </Button>
               <Button mode="text" onPress={() => setMode('forgot')}>
@@ -388,9 +399,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ initialMode = 'login' }) => {
         </ScrollView>
       </TouchableWithoutFeedback>
 
-      <Snackbar visible={!!snackbar} onDismiss={() => setSnackbar('')} duration={3500}>
-        {snackbar}
-      </Snackbar>
     </KeyboardAvoidingView>
   );
 };
@@ -403,6 +411,7 @@ const styles = StyleSheet.create({
   toggleRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
   toggleBtn: { flex: 1 },
   toggleLabel: { fontSize: 14 },
+  errorBanner: { borderRadius: 8, padding: 12, marginBottom: 16 },
   input: { marginBottom: 12 },
   primaryBtn: { marginTop: 4, marginBottom: 24, paddingVertical: 4 },
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
