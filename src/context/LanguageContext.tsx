@@ -34,6 +34,8 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
           // Intl unavailable — stay with 'en'
         }
       }
+    }).catch(() => {
+      // AsyncStorage unavailable — stay with default 'en'
     });
   }, []);
 

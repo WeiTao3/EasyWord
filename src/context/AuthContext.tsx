@@ -14,6 +14,8 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   isLoading: boolean;
+  needsPasswordReset: boolean;
+  clearPasswordReset: () => void;
   signUpWithEmail: (email: string, password: string) => Promise<string | null>;
   signInWithEmail: (email: string, password: string) => Promise<string | null>;
   signInWithGoogle: () => Promise<string | null>;
@@ -32,6 +34,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => setIsLoading(false), 5000);
@@ -41,11 +44,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
+      setIsLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setNeedsPasswordReset(true);
+        setSession(session);
+        setUser(session?.user ?? null);
+      } else {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
     });
 
     return () => {
@@ -135,8 +147,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updatePassword = async (newPassword: string): Promise<string | null> => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (!error) setNeedsPasswordReset(false);
     return error?.message ?? null;
   };
+
+  const clearPasswordReset = () => setNeedsPasswordReset(false);
 
   const deleteAccount = async (): Promise<string | null> => {
     const error = await deleteUserAccount();
@@ -159,6 +174,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       sendPasswordReset, verifyResetOtp, updatePassword,
       deleteAccount,
       signOut,
+      needsPasswordReset, clearPasswordReset,
     }}>
       {children}
     </AuthContext.Provider>

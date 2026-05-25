@@ -41,7 +41,11 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
       return;
     }
     const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
-    Purchases.configure({ apiKey });
+    try {
+      Purchases.configure({ apiKey });
+    } catch (e) {
+      console.error('RevenueCat configure error:', e);
+    }
   }, []);
 
   // Identify user with RevenueCat when logged in (production only)

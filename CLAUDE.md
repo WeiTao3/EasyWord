@@ -5,15 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Start development server (choose platform)
+# Start development server
 npx expo start
 npx expo start --ios
 npx expo start --android
+npx expo start --go          # Force Expo Go (no dev build required)
 
-# Type-check (no test suite exists)
+# Type-check
 npx tsc --noEmit --skipLibCheck
 
-# Fetch/update pre-bundled transcripts (run from /Users/weitao/Desktop/EasyWord/, not EasyWord/)
+# EAS builds
+eas build --platform ios --profile development    # Dev build (install on device)
+eas build --platform ios --profile production     # App Store build
+eas build --platform android --profile production # Google Play build
+eas submit --platform ios                         # Upload to App Store Connect
+
+# Fetch/update pre-bundled CELPIP transcripts (run from /Users/weitao/Desktop/EasyWord/, not EasyWord/)
 node fetchTranscripts.mjs              # skip already-fetched
 node fetchTranscripts.mjs --force      # re-fetch all
 node fetchTranscripts.mjs <videoId>    # single video
@@ -23,73 +30,85 @@ Environment variables required: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABAS
 
 To simulate premium in development, toggle `DEV_SIMULATE_PREMIUM` in `src/config/revenueCat.ts`.
 
+Before each EAS production build: ensure `DEV_SIMULATE_PREMIUM = false`, increment `ios.buildNumber` in `app.json` (App Store Connect rejects reused build numbers), commit and push all changes.
+
 ## Architecture
 
 ### Tech Stack
-- **Expo** (SDK 54, New Architecture enabled) + **React Native** 0.81
-- **react-native-paper** for all UI components (Material Design 3)
-- **Supabase** for auth + database (cloud-synced per user)
+- **Expo SDK 54** (New Architecture **disabled** — `newArchEnabled: false` for iPadOS 26 compatibility) + **React Native 0.81.5**
+- **react-native-paper** for all UI (Material Design 3)
+- **Supabase** for auth + database + audio storage (cloud-synced per user)
 - **RevenueCat** for in-app purchases (premium subscription)
-- **AsyncStorage** for local-only state (settings, transcripts cache, onboarding flags)
+- **AsyncStorage** for local-only state (settings, transcript cache, onboarding flags)
+- **ExpoSecureStore** adapter for Supabase auth token persistence
 
-### Data Flow
+### Context Hierarchy
 
-All app state lives in `WordContext` (`src/context/WordContext.tsx`), which is a `useReducer`-based store with actions defined in `src/types/index.ts`. On mount it loads from Supabase (auth-gated), falls back to AsyncStorage for settings. Every mutation dispatches an action AND calls the corresponding Supabase function in `src/services/supabaseDataService.ts`.
+```
+ErrorBoundary
+└─ PaperProvider (MD3 theme: primary #FACC15 golden yellow)
+   └─ LanguageProvider (en/zh, device-detected, AsyncStorage-persisted)
+      └─ AuthProvider (Supabase session + auth methods)
+         └─ SubscriptionProvider (RevenueCat isPremium, offerings)
+            └─ WordProvider (useReducer — all app state)
+               └─ AppNavigator
+```
 
-There are three contexts:
-- `AuthContext` — Supabase session, exposes sign-in methods (email, Google, Apple)
-- `WordContext` — all words, lists, calendar entries, review schedules; depends on `AuthContext`
-- `SubscriptionContext` — RevenueCat premium status; in `__DEV__` mode uses `DEV_SIMULATE_PREMIUM` flag instead
+**WordContext** is the single source of truth. Every mutation dispatches an action (types in `src/types/index.ts`) AND calls the corresponding Supabase function in `src/services/supabaseDataService.ts`. On login, loads all data from Supabase; on logout, resets to `initialState`.
 
 ### Navigation
 
-Bottom tab navigator (5 tabs: Resource, Add, Lists, Review, Settings). Two stacks inside tabs:
+Bottom tab navigator (5 tabs: Resource, Add, Lists, Review, Settings). Two stacks share `ListDetail` and `RecordScreen`:
 - **ListStack**: WordList → ListDetail → RecordScreen
 - **ReviewStack**: Calendar → CalendarDay → ListDetail → RecordScreen
 
-`ListDetail` and `RecordScreen` are accessible from both the Lists and Review flows.
+Special flows handled in `AppNavigator`:
+- `isLoading` → `AuthLoadingScreen` (with 5-second timeout fallback to prevent blank screen)
+- `needsPasswordReset` (set by `PASSWORD_RECOVERY` Supabase event) → `AuthScreen` in `new-password` mode
+- First login → `OnboardingCarousel` overlay (not in navigation stack)
 
-Onboarding carousel is rendered in `AppNavigator` as an overlay, visible once after first login (flag stored in AsyncStorage via `src/utils/onboarding.ts`).
+### Authentication
 
-### Spaced Repetition
-
-Default intervals: `[1, 2, 4, 7]` days. After 4 reviews a word is "mastered". Logic in `src/utils/spacedRepetition.ts`. Intervals are user-configurable in Settings and stored in Supabase + AsyncStorage.
+`AuthContext` (`src/context/AuthContext.tsx`) exposes:
+- **Email:** `signUpWithEmail` → clears temp session → OTP verify flow
+- **Google:** `signInWithGoogle` — browser OAuth via `expo-web-browser`; tokens are in URL **fragment** (`#`), not query string — parsed manually
+- **Apple:** `signInWithApple` — native via `expo-apple-authentication`; token passed to `supabase.auth.signInWithIdToken`
+- **Password reset:** `sendPasswordReset` → `verifyResetOtp` → `updatePassword`; Supabase fires `PASSWORD_RECOVERY` event which sets `needsPasswordReset = true` to prevent auto-login before new password is set
 
 ### Supabase Tables
 
 | Table | Purpose |
 |---|---|
-| `words` | All user words (snake_case columns, mapped in `supabaseDataService.ts`) |
-| `word_lists` | Word lists with optional `list_no` (used in calendar scheduling) |
-| `calendar_entries` | `(user_id, entry_date, list_no)` — which lists are scheduled on which dates |
+| `words` | All user words (snake_case columns mapped in `supabaseDataService.ts`) |
+| `word_lists` | Word lists with optional `list_no` (used for calendar scheduling) |
+| `calendar_entries` | `(user_id, entry_date, list_no)` — lists scheduled on dates |
 | `checked_list_dates` | `(user_id, list_id, checked_date)` — review completion tracking |
 | `feedback` | User-submitted feedback text |
 
-All queries are scoped to `user_id`. Row-level security enforced server-side.
+All queries scoped to `user_id`. Audio stored in Supabase bucket `EasyWordPremiumAudio` at `{userId}/{wordId}.m4a`; signed URL (365-day) saved as `word.audioUri`. When a word is deleted, `deleteAudio` is called if `audioUri` starts with `https://`.
 
-### Resource Screen (HomeScreen)
+### Spaced Repetition
 
-Displays YouTube videos from `src/data/ieltResources.ts` with live-synced transcripts. Three channels:
-- **celpip** — CELPIP listening mock tests; transcripts pre-bundled in `src/data/transcripts.json`
-- **bbc** — BBC 6 Minute English Box Sets (67 videos); transcripts fetched on-demand
-- **voa** — VOA News Words (447 videos); **no captions available** on YouTube
+Default intervals: `[1, 2, 4, 7]` days (user-configurable). After 4 reviews a word is "mastered". Logic in `src/utils/spacedRepetition.ts`. Calendar scheduling uses intervals directly as offsets from today (today+1, today+2, today+4, today+7). All date calculations use local timezone via `src/utils/dateUtils.ts` — never `toISOString()` which is UTC.
 
-Transcript loading (in `src/utils/transcriptUtils.ts`) uses a 3-tier approach:
-1. Check `src/data/transcripts.json` (pre-bundled, CELPIP only)
-2. Check AsyncStorage cache (keyed `@EasyWord:transcript:<videoId>`)
-3. Fetch from YouTube: scrape `captionTracks` from watch page HTML, then fetch timedtext URL with `&fmt=json3`
+### Premium / RevenueCat
 
-**Note:** The dev machine may be rate-limited (HTTP 429) by the YouTube timedtext API. This resolves on real user devices.
+- Free limits: 15 lists (`FREE_LIST_LIMIT`), 35 words/list (`FREE_WORDS_PER_LIST_LIMIT`)
+- Enforced via `canAddList()` / `canAddWord()` in `SubscriptionContext` before mutations
+- Entitlement ID: `premium` | Product ID: `easyword_premium_monthly`
+- `DEV_SIMULATE_PREMIUM = true` bypasses SDK entirely in dev
 
-### Premium Limits (Free Tier)
+### Resource Screen
 
-- 15 lists max (`FREE_LIST_LIMIT`)
-- 35 words per list max (`FREE_WORDS_PER_LIST_LIMIT`)
+Displays YouTube videos from `src/data/ieltResources.ts` (40 CELPIP + 67 BBC + 447 VOA). Transcript loading (`src/utils/transcriptUtils.ts`) uses 3-tier approach:
+1. Pre-bundled `src/data/transcripts.json` (CELPIP only)
+2. AsyncStorage cache (`@EasyWord:transcript:<videoId>`)
+3. Live YouTube fetch (scrape captionTracks from watch page HTML)
 
-Enforced via `SubscriptionContext.canAddList()` and `canAddWord()`, checked before mutations in the screens.
+VOA videos have no captions — don't attempt transcript fetching for them. Dev machine may be rate-limited (HTTP 429) by YouTube; resolves on real user devices.
 
-### Adding New Resources
+### iOS Build Notes
 
-1. Add entries to `src/data/ieltResources.ts` with the appropriate `channel` value
-2. For CELPIP videos (which have transcripts you want to pre-bundle), run `fetchTranscripts.mjs` from the parent directory (`/Users/weitao/Desktop/EasyWord/`)
-3. VOA videos have no captions — don't attempt transcript fetching for them
+`plugins/withCxxFlags.js` injects a `post_install` Ruby hook into the iOS Podfile that patches `boost/container_hash/hash.hpp` and `RCT-Folly-prefix.pch` to fix a C++17 `std::unary_function` removal issue. This runs during `expo prebuild` on EAS. `scripts/patchBoost.js` (npm `postinstall`) applies the same patches locally if `ios/Pods/` exists.
+
+EAS builds exclusively from committed GitHub code — local uncommitted changes are invisible to EAS.

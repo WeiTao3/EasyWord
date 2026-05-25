@@ -1,13 +1,51 @@
 import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { PaperProvider, MD3LightTheme } from 'react-native-paper';
 import { WordProvider } from './src/context/WordContext';
 import { AuthProvider } from './src/context/AuthContext';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { LanguageProvider } from './src/context/LanguageContext';
 import AppNavigator from './src/navigation/AppNavigator';
+
+// Prevent uncaught JS exceptions from causing SIGABRT in release mode.
+// In development React Native shows a red error screen; in production it calls abort().
+// This handler keeps the app alive so the ErrorBoundary or a graceful UI can show instead.
+if (!__DEV__) {
+  const g = global as any;
+  if (g.ErrorUtils) {
+    g.ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+      console.error('[Uncaught]', error?.message ?? String(error), 'fatal:', isFatal);
+    });
+  }
+}
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: string | null }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { error: error?.message ?? 'Unknown error' };
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, backgroundColor: '#FFFBFE' }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1C1700', marginBottom: 12 }}>EasyWord</Text>
+          <Text style={{ fontSize: 14, color: '#49454F', textAlign: 'center' }}>
+            Something went wrong. Please restart the app.
+          </Text>
+          <Text style={{ fontSize: 11, color: '#79747E', textAlign: 'center', marginTop: 16 }}>
+            {this.state.error}
+          </Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const theme = {
   ...MD3LightTheme,
@@ -51,20 +89,22 @@ const theme = {
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <PaperProvider theme={theme}>
-        <LanguageProvider>
-          <AuthProvider>
-            <SubscriptionProvider>
-              <WordProvider>
-                <StatusBar style="dark" />
-                <AppNavigator />
-              </WordProvider>
-            </SubscriptionProvider>
-          </AuthProvider>
-        </LanguageProvider>
-      </PaperProvider>
-    </GestureHandlerRootView>
+    <ErrorBoundary>
+      <GestureHandlerRootView style={styles.container}>
+        <PaperProvider theme={theme}>
+          <LanguageProvider>
+            <AuthProvider>
+              <SubscriptionProvider>
+                <WordProvider>
+                  <StatusBar style="dark" />
+                  <AppNavigator />
+                </WordProvider>
+              </SubscriptionProvider>
+            </AuthProvider>
+          </LanguageProvider>
+        </PaperProvider>
+      </GestureHandlerRootView>
+    </ErrorBoundary>
   );
 }
 

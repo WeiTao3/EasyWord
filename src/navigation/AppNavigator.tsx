@@ -111,7 +111,7 @@ const TabNavigator = () => {
 };
 
 const AppNavigator: React.FC = () => {
-  const { session, isLoading } = useAuth();
+  const { session, isLoading, needsPasswordReset } = useAuth();
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -130,8 +130,8 @@ const AppNavigator: React.FC = () => {
   if (isLoading) return <AuthLoadingScreen />;
   return (
     <NavigationContainer>
-      {session ? <TabNavigator /> : <AuthScreen />}
-      <OnboardingCarousel visible={showOnboarding} onDone={handleOnboardingDone} />
+      {session && needsPasswordReset ? <AuthScreen initialMode="new-password" /> : session ? <TabNavigator /> : <AuthScreen />}
+      <OnboardingCarousel visible={showOnboarding && !needsPasswordReset} onDone={handleOnboardingDone} />
     </NavigationContainer>
   );
 };
