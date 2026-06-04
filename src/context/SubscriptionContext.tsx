@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { Platform } from 'react-native';
-import Purchases, { CustomerInfo, PurchasesOfferings } from 'react-native-purchases';
+import type { CustomerInfo, PurchasesOfferings } from 'react-native-purchases';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const loadPurchases = () => require('react-native-purchases').default as any;
 import {
   REVENUECAT_API_KEY_IOS,
   REVENUECAT_API_KEY_ANDROID,
@@ -42,7 +44,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
     const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
     try {
-      Purchases.configure({ apiKey });
+      loadPurchases().configure({ apiKey });
     } catch (e) {
       console.error('RevenueCat configure error:', e);
     }
@@ -59,10 +61,10 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     const init = async () => {
       setIsLoading(true);
       try {
-        await Purchases.logIn(user.id);
+        await loadPurchases().logIn(user.id);
         const [customerInfo, fetchedOfferings] = await Promise.all([
-          Purchases.getCustomerInfo(),
-          Purchases.getOfferings(),
+          loadPurchases().getCustomerInfo(),
+          loadPurchases().getOfferings(),
         ]);
         setIsPremium(!!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
         setOfferings(fetchedOfferings);
@@ -74,7 +76,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     };
     init();
 
-    Purchases.addCustomerInfoUpdateListener((info: CustomerInfo) => {
+    loadPurchases().addCustomerInfoUpdateListener((info: CustomerInfo) => {
       setIsPremium(!!info.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
     });
   }, [user]);
@@ -82,7 +84,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   const purchasePremium = async (): Promise<string | null> => {
     try {
       if (!offerings?.current?.monthly) return 'No offerings available.';
-      const { customerInfo } = await Purchases.purchasePackage(offerings.current.monthly);
+      const { customerInfo } = await loadPurchases().purchasePackage(offerings.current.monthly);
       setIsPremium(!!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
       return null;
     } catch (e: any) {
@@ -93,7 +95,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const restorePurchases = async (): Promise<string | null> => {
     try {
-      const customerInfo = await Purchases.restorePurchases();
+      const customerInfo = await loadPurchases().restorePurchases();
       setIsPremium(!!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
       return null;
     } catch (e: any) {
