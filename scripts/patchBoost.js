@@ -51,11 +51,11 @@ const targets = [
       'RCTTurboModule.mm'
     ),
     check: 'convertNSExceptionToJSError',
-    guard: 'fix_ios26_v1',
+    guard: 'fix_ios26_v2',
     patch: (src) =>
       src.replace(
         '      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);\n    } @finally {',
-        '      @throw exception; // fix_ios26_v1\n    } @finally {'
+        '      (void)exception; // fix_ios26_v2: swallow — both @throw and convertNSExceptionToJSError\n      // call objc_exception_rethrow which terminates in GCD\'s C++ stack on iOS 26.\n    } @finally {'
       ),
   },
 ];
