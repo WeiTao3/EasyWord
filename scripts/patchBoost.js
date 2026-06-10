@@ -36,26 +36,25 @@ const targets = [
       '// fix_cxx17_v4\n#define _LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION\n' + src,
   },
   {
-    // iOS 26 crash fix: convertNSExceptionToJSError corrupts Hermes memory on iOS 26,
-    // causing abort() via objc_exception_rethrow. Re-throwing the original ObjC exception
-    // lets the native runtime handle it gracefully instead.
+    // iOS 26 crash fix (old architecture, newArchEnabled: false):
+    // RCTNativeModule::invokeInner calls RCTFatalException on any uncaught ObjC
+    // exception from a native module. RCTFatalException does @throw exception in
+    // release builds, which propagates through GCD's C++ dispatch stack with no
+    // outer ObjC handler and triggers objc_exception_rethrow -> abort on iOS 26.
+    // Swallow the exception so invokeInner returns std::nullopt and the app
+    // continues. The JS caller sees the method call complete with no result.
     file: path.join(
       rnDir,
-      'ReactCommon',
-      'react',
-      'nativemodule',
-      'core',
-      'platform',
-      'ios',
-      'ReactCommon',
-      'RCTTurboModule.mm'
+      'React',
+      'CxxModule',
+      'RCTNativeModule.mm'
     ),
-    check: 'convertNSExceptionToJSError',
-    guard: 'fix_ios26_v2',
+    check: 'RCTFatalException(exception)',
+    guard: 'fix_ios26_v3',
     patch: (src) =>
       src.replace(
-        '      throw convertNSExceptionToJSError(runtime, exception, std::string{moduleName}, methodNameStr);\n    } @finally {',
-        '      (void)exception; // fix_ios26_v2: swallow — both @throw and convertNSExceptionToJSError\n      // call objc_exception_rethrow which terminates in GCD\'s C++ stack on iOS 26.\n    } @finally {'
+        '#else\n    RCTFatalException(exception);\n#endif\n  } @finally {',
+        '#else\n    (void)exception; // fix_ios26_v3: swallow — RCTFatalException @throws which terminates on iOS 26\n#endif\n  } @finally {'
       ),
   },
 ];
