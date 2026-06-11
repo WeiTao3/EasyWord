@@ -10,6 +10,7 @@ import {
   FREE_LIST_LIMIT,
   FREE_WORDS_PER_LIST_LIMIT,
   DEV_SIMULATE_PREMIUM,
+  DISABLE_REVENUECAT,
 } from '../config/revenueCat';
 import { useAuth } from './AuthContext';
 
@@ -36,8 +37,8 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [offerings, setOfferings] = useState<PurchasesOfferings | null>(null);
 
   useEffect(() => {
-    // In dev mode, skip RevenueCat entirely and use the simulation flag
-    if (IS_DEV) {
+    // Skip RevenueCat in dev mode or when explicitly disabled (e.g. iOS 26 crash investigation)
+    if (IS_DEV || DISABLE_REVENUECAT) {
       setIsPremium(DEV_SIMULATE_PREMIUM);
       setIsLoading(false);
       return;
@@ -52,7 +53,7 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   // Identify user with RevenueCat when logged in (production only)
   useEffect(() => {
-    if (IS_DEV) return;
+    if (IS_DEV || DISABLE_REVENUECAT) return;
     if (!user) {
       setIsPremium(false);
       setIsLoading(false);

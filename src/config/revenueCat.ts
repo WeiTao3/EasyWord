@@ -7,6 +7,11 @@ export const REVENUECAT_API_KEY_ANDROID = 'goog_FLycJKwtpuYePfWDveGRicuViaq';
 // Has no effect in production builds
 export const DEV_SIMULATE_PREMIUM = false;
 
+// ── iOS 26 crash investigation ────────────────────────────────────────────────
+// Set to true to disable RevenueCat entirely (all users treated as free tier).
+// Use to isolate whether RevenueCat is causing the iOS 26 launch crash.
+export const DISABLE_REVENUECAT = true;
+
 // Product identifier — must match what you create in App Store Connect / Google Play
 export const PREMIUM_PRODUCT_ID = 'easyword_premium_monthly';
 export const PREMIUM_ENTITLEMENT_ID = 'premium';
