@@ -10,7 +10,9 @@ export const DEV_SIMULATE_PREMIUM = false;
 // ── iOS 26 crash investigation ────────────────────────────────────────────────
 // Set to true to disable RevenueCat entirely (all users treated as free tier).
 // Use to isolate whether RevenueCat is causing the iOS 26 launch crash.
-export const DISABLE_REVENUECAT = true;
+// NOTE: The iOS launch crash was NOT RevenueCat — it was missing Supabase env
+// vars in EAS builds (see git history / build 14). Kept here as a kill switch.
+export const DISABLE_REVENUECAT = false;
 
 // Product identifier — must match what you create in App Store Connect / Google Play
 export const PREMIUM_PRODUCT_ID = 'easyword_premium_monthly';
