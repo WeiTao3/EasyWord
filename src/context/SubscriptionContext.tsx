@@ -45,6 +45,11 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
     }
     const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
     try {
+      // Verbose logging so the device console explains *why* offerings are empty
+      // (e.g. products not fetchable from App Store Connect). Dial back post-launch.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { LOG_LEVEL } = require('react-native-purchases');
+      loadPurchases().setLogLevel(LOG_LEVEL.VERBOSE);
       loadPurchases().configure({ apiKey });
     } catch (e) {
       console.error('RevenueCat configure error:', e);
@@ -69,6 +74,14 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
         ]);
         setIsPremium(!!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
         setOfferings(fetchedOfferings);
+        // Diagnostic: surface what RevenueCat actually returned so empty paywalls
+        // can be debugged from the device console.
+        console.log('[RC] offerings:', JSON.stringify({
+          current: fetchedOfferings?.current?.identifier ?? null,
+          allOfferings: Object.keys(fetchedOfferings?.all ?? {}),
+          currentPackages: fetchedOfferings?.current?.availablePackages?.map((p: any) => p.identifier) ?? [],
+          hasMonthly: !!fetchedOfferings?.current?.monthly,
+        }));
       } catch (e) {
         console.error('RevenueCat init error:', e);
       } finally {
@@ -84,8 +97,12 @@ export const SubscriptionProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const purchasePremium = async (): Promise<string | null> => {
     try {
-      if (!offerings?.current?.monthly) return 'No offerings available.';
-      const { customerInfo } = await loadPurchases().purchasePackage(offerings.current.monthly);
+      // Prefer the Monthly-typed package, but fall back to the first available
+      // package so a correctly-configured offering still works even if the package
+      // wasn't tagged "Monthly" in the RevenueCat dashboard.
+      const pkg = offerings?.current?.monthly ?? offerings?.current?.availablePackages?.[0];
+      if (!pkg) return 'No offerings available.';
+      const { customerInfo } = await loadPurchases().purchasePackage(pkg);
       setIsPremium(!!customerInfo.entitlements.active[PREMIUM_ENTITLEMENT_ID]);
       return null;
     } catch (e: any) {

@@ -25,7 +25,7 @@ const PaywallScreen: React.FC<Props> = ({ onDismiss }) => {
   const [restoring, setRestoring] = useState(false);
   const [snackbar, setSnackbar] = useState('');
 
-  const monthlyPackage = offerings?.current?.monthly;
+  const monthlyPackage = offerings?.current?.monthly ?? offerings?.current?.availablePackages?.[0];
   const price = monthlyPackage?.product?.priceString ?? '—';
 
   const handlePurchase = async () => {
