@@ -305,7 +305,7 @@ export const translations: Record<Language, Translations> = {
       editList: 'Edit List',
       deleteList: 'Delete List',
       deleteConfirm: (name) =>
-        `Delete "${name}"? Words inside will be moved to the next available list.`,
+        `Delete "${name}"? All words in this list (and their recordings) will be permanently deleted.`,
       listNoRequired: 'List No is required.',
       listNoDuplicate: 'This List No is already in use.',
     },
@@ -556,7 +556,7 @@ export const translations: Record<Language, Translations> = {
       editList: '编辑列表',
       deleteList: '删除列表',
       deleteConfirm: (name) =>
-        `删除"${name}"？其中的单词将移至下一个可用列表。`,
+        `删除"${name}"？列表中的所有单词（及其录音）将被永久删除。`,
       listNoRequired: '列表编号为必填项。',
       listNoDuplicate: '此列表编号已被使用。',
     },

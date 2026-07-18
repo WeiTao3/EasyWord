@@ -12,6 +12,7 @@ const mapRowToWord = (row: any): Word => ({
   pronunciation: row.pronunciation ?? '',
   source: row.source ?? '',
   dateAdded: row.date_added,
+  createdAt: row.created_at ?? undefined,
   audioUri: row.audio_uri ?? null,
   listId: row.list_id ?? '',
   reviewSchedule: {
@@ -54,10 +55,18 @@ const mapListToRow = (list: WordList, userId: string) => ({
 // ── Words ─────────────────────────────────────────────────────────────────────
 
 export const loadWords = async (userId: string): Promise<Word[]> => {
+  // Deterministic order: oldest added first. Without an explicit order Postgres
+  // returns rows in arbitrary order (it changes when rows are updated), which
+  // shuffled lists between app launches. created_at gives true add order for
+  // words inserted after the column was added; rows that predate it share one
+  // backfilled timestamp, so date_added (a DATE, no time) and id break ties.
   const { data, error } = await supabase
     .from('words')
     .select('*')
-    .eq('user_id', userId);
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+    .order('date_added', { ascending: true })
+    .order('id', { ascending: true });
   if (error) throw error;
   return (data ?? []).map(mapRowToWord);
 };
@@ -91,11 +100,11 @@ export const deleteWord = async (id: string, userId: string): Promise<void> => {
   if (error) throw error;
 };
 
-export const reassignWords = async (fromListId: string, toListId: string | null, userId: string): Promise<void> => {
+export const deleteWordsByList = async (listId: string, userId: string): Promise<void> => {
   const { error } = await supabase
     .from('words')
-    .update({ list_id: toListId })
-    .eq('list_id', fromListId)
+    .delete()
+    .eq('list_id', listId)
     .eq('user_id', userId);
   if (error) throw error;
 };

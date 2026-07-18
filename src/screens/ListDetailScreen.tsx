@@ -82,7 +82,17 @@ const ListDetailScreen: React.FC = () => {
   const soundRef = useRef<Audio.Sound | null>(null);
   const stoppedRef = useRef(false);
 
-  const listWords = state.words.filter((w) => w.listId === listId);
+  // Same order as loadWords (created_at asc, then date_added, then id) so the
+  // list doesn't reshuffle between an in-session add and the next app launch.
+  const listWords = state.words
+    .filter((w) => w.listId === listId)
+    .sort((a, b) => {
+      const ca = a.createdAt ?? '';
+      const cb = b.createdAt ?? '';
+      if (ca !== cb) return ca < cb ? -1 : 1;
+      if (a.dateAdded !== b.dateAdded) return a.dateAdded < b.dateAdded ? -1 : 1;
+      return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
   const wordsWithAudio = listWords.filter((w) => w.audioUri);
 
   const isListInCalendar =

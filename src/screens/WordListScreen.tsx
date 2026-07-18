@@ -56,6 +56,13 @@ const WordListScreen: React.FC = () => {
   const wordCountFor = (listId: string) =>
     state.words.filter((w) => w.listId === listId).length;
 
+  // Count only words that belong to an existing list, so orphaned rows left
+  // behind by older list deletions don't inflate the total.
+  const totalWords = React.useMemo(() => {
+    const listIds = new Set(state.lists.map((l) => l.id));
+    return state.words.filter((w) => listIds.has(w.listId)).length;
+  }, [state.lists, state.words]);
+
   const generateDefaultName = (): string => {
     const today = new Date().toISOString().split('T')[0];
     const existingNames = new Set(state.lists.map((l) => l.name));
@@ -214,7 +221,7 @@ const WordListScreen: React.FC = () => {
               {t.lists.title}
             </Text>
             <Text variant="bodyMedium" style={styles.subtitle}>
-              {t.lists.subtitle(state.lists.length, state.words.length)}
+              {t.lists.subtitle(state.lists.length, totalWords)}
             </Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>

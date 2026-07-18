@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.org.easyword",
-      "buildNumber": "16",
+      "buildNumber": "17",
       "usesAppleSignIn": true,
       "infoPlist": {
         "NSMicrophoneUsageDescription": "EasyWord uses the microphone to record your word pronunciations so you can play them back during vocabulary review.",

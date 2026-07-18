@@ -11,6 +11,8 @@ export interface Word {
   pronunciation: string;
   source: string;
   dateAdded: string;
+  /** Set by the DB (words.created_at, default now()); used for stable add-order sorting */
+  createdAt?: string;
   audioUri: string | null;
   reviewSchedule: ReviewSchedule;
   listId: string;

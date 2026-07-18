@@ -55,17 +55,13 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       return { ...state, lists: [...state.lists, action.payload] };
     case 'UPDATE_LIST':
       return { ...state, lists: state.lists.map((l) => (l.id === action.payload.id ? action.payload : l)) };
-    case 'DELETE_LIST': {
-      const remainingLists = state.lists.filter((l) => l.id !== action.payload);
-      const fallbackId = remainingLists.length > 0
-        ? [...remainingLists].sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime())[0].id
-        : '';
+    case 'DELETE_LIST':
+      // A deleted list takes its words with it (mirrors deleteWordsByList in the DB)
       return {
         ...state,
-        lists: remainingLists,
-        words: state.words.map((w) => w.listId === action.payload ? { ...w, listId: fallbackId } : w),
+        lists: state.lists.filter((l) => l.id !== action.payload),
+        words: state.words.filter((w) => w.listId !== action.payload),
       };
-    }
     case 'LOAD_LISTS':
       return { ...state, lists: action.payload };
     case 'ADD_CALENDAR_ENTRIES': {
@@ -241,11 +237,14 @@ export const WordProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const deleteList = async (id: string) => {
     if (!user) return;
-    const remainingLists = state.lists.filter((l) => l.id !== id);
-    const fallbackId = remainingLists.length > 0
-      ? [...remainingLists].sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime())[0].id
-      : null;
-    await db.reassignWords(id, fallbackId, user.id);
+    // Deleting a list deletes its words too (and their cloud audio recordings)
+    const listWords = state.words.filter((w) => w.listId === id);
+    await Promise.all(
+      listWords
+        .filter((w) => w.audioUri?.startsWith('https://'))
+        .map((w) => db.deleteAudio(w.id, user.id).catch(() => {}))
+    );
+    await db.deleteWordsByList(id, user.id);
     await db.deleteList(id, user.id);
     dispatch({ type: 'DELETE_LIST', payload: id });
   };
